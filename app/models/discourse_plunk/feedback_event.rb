@@ -66,3 +66,67 @@ module DiscoursePlunk
     end
   end
 end
+
+# == Schema Information
+#
+# Table name: discourse_plunk_feedback_events
+#
+#  id                        :bigint           not null, primary key
+#  attempts                  :integer          default(0), not null
+#  bounce_classification     :string(16)
+#  bounce_score_after        :integer
+#  bounce_score_before       :integer
+#  bounce_type               :string(64)
+#  contact_subscribed        :boolean
+#  correlation               :string(48)
+#  correlation_applied_at    :datetime
+#  correlation_state         :string(16)       default("pending"), not null
+#  delivery_count            :integer          default(1), not null
+#  delivery_digest           :string(64)       not null
+#  execution_started_at      :datetime
+#  feedback_digest           :string(64)
+#  identity_conflict_count   :integer          default(0), not null
+#  identity_digest           :string(64)       not null
+#  kind                      :string(32)       not null
+#  last_attempt_at           :datetime
+#  last_delivery_at          :datetime
+#  last_error                :string(1000)
+#  last_identity_conflict_at :datetime
+#  match_method              :string(32)
+#  next_attempt_at           :datetime
+#  occurred_at               :datetime
+#  outcome                   :string(48)
+#  preference_applied_at     :datetime
+#  preference_changes        :jsonb            not null
+#  preference_state          :string(16)       default("pending"), not null
+#  processed_at              :datetime
+#  received_at               :datetime         not null
+#  recipient                 :string(320)      not null
+#  score_applied_at          :datetime
+#  score_delta               :integer
+#  score_effect              :string(32)
+#  score_state               :string(16)       default("pending"), not null
+#  source                    :string(16)       default("webhook"), not null
+#  source_type               :string(32)
+#  status                    :string(24)       default("received"), not null
+#  unsubscribe_reason        :string(64)
+#  workflow_name             :string(191)
+#  created_at                :datetime         not null
+#  updated_at                :datetime         not null
+#  duplicate_of_event_id     :bigint
+#  email_log_id              :integer
+#  execution_id              :string(191)      not null
+#  plunk_email_id            :string(191)
+#  provider_message_id       :string(512)
+#  user_id                   :integer
+#  workflow_id               :string(191)      not null
+#
+# Indexes
+#
+#  idx_discourse_plunk_events_delivery                       (kind,workflow_id,execution_id) UNIQUE
+#  idx_on_status_next_attempt_at_bcf38b8d81                  (status,next_attempt_at)
+#  index_discourse_plunk_feedback_events_on_feedback_digest  (feedback_digest)
+#  index_discourse_plunk_feedback_events_on_received_at      (received_at)
+#  index_discourse_plunk_feedback_events_on_recipient        (recipient)
+#  index_discourse_plunk_feedback_events_on_user_id          (user_id)
+#

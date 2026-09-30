@@ -17,3 +17,23 @@ module DiscoursePlunk
     end
   end
 end
+
+# == Schema Information
+#
+# Table name: discourse_plunk_tombstones
+#
+#  id                   :bigint           not null, primary key
+#  digest               :string(64)       not null
+#  key_type             :string(16)       not null
+#  kind                 :string(32)       not null
+#  original_received_at :datetime
+#  preference_applied   :boolean          default(FALSE), not null
+#  score_applied        :boolean          default(FALSE), not null
+#  created_at           :datetime         not null
+#  updated_at           :datetime         not null
+#  original_event_id    :bigint
+#
+# Indexes
+#
+#  idx_discourse_plunk_tombstones_key  (key_type,digest) UNIQUE
+#
