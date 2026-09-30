@@ -498,10 +498,8 @@ levels preserved, account-recovery mail still sent, the native bounce
 threshold's single revoke log and system message with no email to the
 recipient, secret and address absence from responses and logs.
 
-Local environment notes, for honesty about what ran where: the GitHub Actions
-workflow (Discourse's shared plugin CI) is included but runs on pull requests
-and `main`, so it had not run when this was written. The system specs ran on
-the test machine's pre-installed Chromium 141 rather than the Chromium 151
-that Discourse's Playwright 1.62.1 downloads, and with a `magick` →
-ImageMagick 6 shim for core's letter avatars. Neither affects the plugin's
-code.
+The repository has no hosted CI: run the commands above locally before
+pushing. Local environment notes: the system specs ran on the test machine's
+pre-installed Chromium 141 rather than the Chromium 151 that Discourse's
+Playwright 1.62.1 downloads, and with a `magick` → ImageMagick 6 shim for
+core's letter avatars. Neither affects the plugin's code.
