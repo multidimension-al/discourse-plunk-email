@@ -1,0 +1,18 @@
+{
+  "contact": {
+    "email": "plunk-test@example.com",
+    "subscribed": false,
+    "data": {
+      "firstName": "Synthetic"
+    }
+  },
+  "workflow": {
+    "id": "wf_test_unsubscribe",
+    "name": "Discourse unsubscribe feedback"
+  },
+  "execution": {
+    "id": "exec_test_unsubscribe_001",
+    "startedAt": "2026-09-30T12:00:00.000Z"
+  },
+  "event": {}
+}

@@ -1,0 +1,26 @@
+# Discourse's shared plugin CI: linting, the RSpec suite and the
+# JavaScript acceptance tests, each run against a real Discourse
+# checkout that this repository cannot provide on its own.
+#
+# Annotation checks are skipped: they verify that model files carry a
+# generated `# == Schema Information` block, which this plugin has
+# never used. Adopting them is a separate change — it needs `rake
+# annotate` run inside a Discourse checkout, not hand-written comments.
+name: Discourse Plugin
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: plugin-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: discourse/.github/.github/workflows/discourse-plugin.yml@v1
+    with:
+      skip_annotations: true

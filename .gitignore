@@ -1,0 +1,7 @@
+node_modules
+/gems
+/auto_generated
+/log/*.log
+/tmp
+.DS_Store
+node_modules
