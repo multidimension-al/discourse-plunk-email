@@ -109,7 +109,7 @@ module DiscoursePlunk
     def apply_preferences(user)
       return if finished?(@event.preference_state)
 
-      FeedbackEvent.transaction do
+      FeedbackEvent.transaction(requires_new: true) do
         event = FeedbackEvent.lock.find(@event.id)
         next if finished?(event.preference_state)
 
@@ -146,7 +146,7 @@ module DiscoursePlunk
       return if finished?(@event.score_state)
 
       score, effect = native_score
-      FeedbackEvent.transaction do
+      FeedbackEvent.transaction(requires_new: true) do
         event = FeedbackEvent.lock.find(@event.id)
         next if finished?(event.score_state)
 
@@ -201,7 +201,7 @@ module DiscoursePlunk
         return
       end
 
-      FeedbackEvent.transaction do
+      FeedbackEvent.transaction(requires_new: true) do
         event = FeedbackEvent.lock.find(@event.id)
         next if finished?(event.correlation_state)
 

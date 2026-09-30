@@ -33,7 +33,7 @@ class CreateDiscoursePlunkFeedbackEvents < ActiveRecord::Migration[8.0]
       t.string :status, null: false, limit: 24, default: "received"
       t.string :outcome, limit: 48
       t.integer :user_id
-      t.string :match_method, limit: 24
+      t.string :match_method, limit: 32
       t.integer :email_log_id
       t.string :correlation, limit: 48
       t.bigint :duplicate_of_event_id

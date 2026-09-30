@@ -48,8 +48,9 @@ module PlunkSpecHelpers
     DiscoursePlunk::OptionalEmailPreferences.all_disabled?(user.user_option.reload)
   end
 
+  # An explicit native opt-in, as the user would make on their preferences page.
   def opt_in!(user)
-    user.user_option.update!(
+    user.user_option.reload.update!(
       email_level: UserOption.email_level_types[:always],
       email_messages_level: UserOption.email_level_types[:always],
       email_digests: true,
