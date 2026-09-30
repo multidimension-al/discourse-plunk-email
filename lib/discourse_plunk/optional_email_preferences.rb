@@ -92,9 +92,12 @@ module DiscoursePlunk
       verify!(option)
       after = snapshot(option)
 
-      self.class.columns.each_with_object({}) do |column, changes|
-        changes[column] = [before[column], after[column]] if before[column] != after[column]
-      end
+      self
+        .class
+        .columns
+        .each_with_object({}) do |column, changes|
+          changes[column] = [before[column], after[column]] if before[column] != after[column]
+        end
     end
 
     # Every optional-email preference is off.

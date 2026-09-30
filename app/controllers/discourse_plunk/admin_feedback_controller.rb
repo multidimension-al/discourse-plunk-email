@@ -2,17 +2,18 @@
 
 module DiscoursePlunk
   # Administrator-only diagnostics and safe reprocessing. Inherits the admin
-  # controller's login, admin check and CSRF protection. Available while the
-  # receiver is disabled so history stays inspectable during a rollback;
-  # reprocessing requires the plugin to be enabled.
-  class AdminFeedbackController < ::Admin::AdminController
+  # controller's login, admin check and CSRF protection. Deliberately without
+  # requires_plugin: history must stay inspectable while the receiver is
+  # disabled (during a rollback, say). Reprocessing checks the setting itself.
+  class AdminFeedbackController < ::Admin::AdminController # rubocop:disable Discourse/Plugins/CallRequiresPlugin
     PAGE_SIZE = 50
 
     def status
       render json: {
                enabled: SiteSetting.plunk_feedback_enabled,
                secret_configured: SiteSetting.plunk_feedback_webhook_secret.present?,
-               previous_secret_configured: SiteSetting.plunk_feedback_webhook_previous_secret.present?,
+               previous_secret_configured:
+                 SiteSetting.plunk_feedback_webhook_previous_secret.present?,
                recovery_healthy: Recovery.healthy?,
                retention_days: SiteSetting.plunk_feedback_event_retention_days,
                optional_preferences: OptionalEmailPreferences.columns,

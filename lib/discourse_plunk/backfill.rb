@@ -14,14 +14,14 @@ module DiscoursePlunk
 
     def self.run(route, path)
       kind = DiscoursePlunk::ROUTES.fetch(route) { raise ArgumentError, "unknown route #{route}" }
-      raise Discourse::InvalidAccess, "plunk_feedback_enabled is off" if !SiteSetting.plunk_feedback_enabled
+      if !SiteSetting.plunk_feedback_enabled
+        raise Discourse::InvalidAccess, "plunk_feedback_enabled is off"
+      end
 
       document = JSON.parse(File.read(path), max_nesting: 16)
       records = document.is_a?(Array) ? document : [document]
 
-      records.each_with_index.map do |record, index|
-        replay(kind, record, index)
-      end
+      records.each_with_index.map { |record, index| replay(kind, record, index) }
     end
 
     def self.replay(kind, record, index)

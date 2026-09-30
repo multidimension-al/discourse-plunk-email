@@ -7,7 +7,12 @@ require_relative "../support/plunk_helpers"
 # the same path does send mail to the same user beforehand.
 RSpec.describe "Plunk feedback and Discourse's email paths" do
   fab!(:user) do
-    Fabricate(:user, email: "reader@example.com", trust_level: TrustLevel[1], last_seen_at: 8.days.ago)
+    Fabricate(
+      :user,
+      email: "reader@example.com",
+      trust_level: TrustLevel[1],
+      last_seen_at: 8.days.ago,
+    )
   end
   fab!(:author) { Fabricate(:user, trust_level: TrustLevel[2]) }
   fab!(:topic) { Fabricate(:topic, user: author) }
@@ -62,7 +67,11 @@ RSpec.describe "Plunk feedback and Discourse's email paths" do
   describe "topic notification email" do
     before do
       Jobs.run_immediately!
-      TopicUser.change(user.id, topic.id, notification_level: TopicUser.notification_levels[:watching])
+      TopicUser.change(
+        user.id,
+        topic.id,
+        notification_level: TopicUser.notification_levels[:watching],
+      )
     end
 
     it "is sent before feedback and not after; in-app notifications and the watch continue" do
@@ -76,7 +85,9 @@ RSpec.describe "Plunk feedback and Discourse's email paths" do
 
       expect(deliveries_to(user)).to be_empty
       # The in-app notification for the new reply is still created.
-      expect(Notification.where(user: user, topic: topic).where("id > ?", last_notification_id)).to exist
+      expect(
+        Notification.where(user: user, topic: topic).where("id > ?", last_notification_id),
+      ).to exist
       expect(TopicUser.get(topic, user).notification_level).to eq(
         TopicUser.notification_levels[:watching],
       )
@@ -125,7 +136,8 @@ RSpec.describe "Plunk feedback and Discourse's email paths" do
     end
 
     it "mails every post before feedback and nothing after" do
-      post = Fabricate(:post, topic: topic, user: author, raw: "Mailing list post one, long enough.")
+      post =
+        Fabricate(:post, topic: topic, user: author, raw: "Mailing list post one, long enough.")
       Jobs::NotifyMailingListSubscribers.new.execute(post_id: post.id)
       expect(deliveries_to(user).size).to eq(1)
 
@@ -133,7 +145,8 @@ RSpec.describe "Plunk feedback and Discourse's email paths" do
       receive_plunk("complaint", complaint)
       expect(user.user_option.reload.mailing_list_mode).to eq(false)
 
-      post = Fabricate(:post, topic: topic, user: author, raw: "Mailing list post two, long enough.")
+      post =
+        Fabricate(:post, topic: topic, user: author, raw: "Mailing list post two, long enough.")
       Jobs::NotifyMailingListSubscribers.new.execute(post_id: post.id)
       expect(deliveries_to(user)).to be_empty
     end
@@ -167,7 +180,11 @@ RSpec.describe "Plunk feedback and Discourse's email paths" do
     # Sidekiq is in fake mode here: jobs are queued, not run, as in production
     # during email_time_window_mins.
     def queue_reply_notification
-      TopicUser.change(user.id, topic.id, notification_level: TopicUser.notification_levels[:watching])
+      TopicUser.change(
+        user.id,
+        topic.id,
+        notification_level: TopicUser.notification_levels[:watching],
+      )
       post = reply
       Jobs::PostAlert.new.execute(post_id: post.id, new_record: true)
       queued_email_for(user)
@@ -283,7 +300,11 @@ RSpec.describe "Plunk feedback and Discourse's email paths" do
       receive_plunk("complaint", plunk_payload("synthetic-email-complaint", email: inactive.email))
       token = Fabricate(:email_token, user: inactive, scope: EmailToken.scopes[:signup])
 
-      Jobs::CriticalUserEmail.new.execute(type: :signup, user_id: inactive.id, email_token: token.token)
+      Jobs::CriticalUserEmail.new.execute(
+        type: :signup,
+        user_id: inactive.id,
+        email_token: token.token,
+      )
 
       expect(deliveries_to(inactive).size).to eq(1)
       expect(DiscoursePlunk::FeedbackEvent.last.match_method).to eq("primary_email_unactivated")

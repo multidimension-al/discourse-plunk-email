@@ -81,7 +81,7 @@ function show(value) {
   return value === null || value === undefined || value === "" ? "—" : value;
 }
 
-<template>
+export default <template>
   <div class="plunk-feedback-admin admin-detail">
     <DPageSubheader
       @titleLabel={{i18n "discourse_plunk.admin.page_title"}}
@@ -186,9 +186,10 @@ function show(value) {
         </dl>
         <ul class="plunk-feedback-admin__counts">
           {{#each COUNT_KEYS as |key|}}
-            <li><strong>{{countValue @controller.status.counts key}}</strong>{{countLabel
-                key
-              }}</li>
+            <li><strong>{{countValue
+                  @controller.status.counts
+                  key
+                }}</strong>{{countLabel key}}</li>
           {{/each}}
         </ul>
       </section>
@@ -211,7 +212,9 @@ function show(value) {
           aria-label={{i18n "discourse_plunk.admin.all_statuses"}}
           {{on "change" @controller.updateStatusFilter}}
         >
-          <option value="">{{i18n "discourse_plunk.admin.all_statuses"}}</option>
+          <option value="">{{i18n
+              "discourse_plunk.admin.all_statuses"
+            }}</option>
           {{#each STATUS_FILTERS as |status|}}
             <option
               value={{status}}
@@ -356,9 +359,7 @@ function show(value) {
                 {{/if}}</dd>
               <dt>{{i18n "discourse_plunk.admin.detail.score_effect"}}</dt>
               <dd>{{show event.score_effect}}</dd>
-              <dt>{{i18n
-                  "discourse_plunk.admin.detail.correlation_phase"
-                }}</dt>
+              <dt>{{i18n "discourse_plunk.admin.detail.correlation_phase"}}</dt>
               <dd>{{event.correlation_state}}</dd>
             </dl>
 

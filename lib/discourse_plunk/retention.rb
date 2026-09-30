@@ -15,7 +15,12 @@ module DiscoursePlunk
 
       loop do
         events =
-          FeedbackEvent.where("received_at < ?", cutoff).where(PURGEABLE).order(:id).limit(BATCH_SIZE).to_a
+          FeedbackEvent
+            .where("received_at < ?", cutoff)
+            .where(PURGEABLE)
+            .order(:id)
+            .limit(BATCH_SIZE)
+            .to_a
         break if events.empty?
 
         FeedbackEvent.transaction do
@@ -31,14 +36,17 @@ module DiscoursePlunk
     def self.entomb(event)
       now = Time.zone.now
       upsert(Tombstone::DELIVERY, event.delivery_digest, event, now)
-      upsert(Tombstone::FEEDBACK, event.feedback_digest, event, now) if event.feedback_digest.present?
+      if event.feedback_digest.present?
+        upsert(Tombstone::FEEDBACK, event.feedback_digest, event, now)
+      end
     end
 
     def self.upsert(key_type, digest, event, now)
       preference_applied = event.preference_state == "done"
       score_applied = event.score_state == "done"
 
-      DB.exec(<<~SQL, key_type:, digest:, kind: event.kind, preference_applied:, score_applied:, event_id: event.id, received_at: event.received_at, now:)
+      DB.exec(
+        <<~SQL,
         INSERT INTO discourse_plunk_tombstones
           (key_type, digest, kind, preference_applied, score_applied, original_event_id,
            original_received_at, created_at, updated_at)
@@ -56,6 +64,15 @@ module DiscoursePlunk
           END,
           updated_at = EXCLUDED.updated_at
       SQL
+        key_type:,
+        digest:,
+        kind: event.kind,
+        preference_applied:,
+        score_applied:,
+        event_id: event.id,
+        received_at: event.received_at,
+        now:,
+      )
     end
   end
 end

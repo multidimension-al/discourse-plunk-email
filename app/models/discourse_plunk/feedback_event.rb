@@ -18,8 +18,14 @@ module DiscoursePlunk
     STATUSES = %w[received processing processed failed unmatched conflict].freeze
     TERMINAL_STATUSES = %w[processed unmatched conflict].freeze
 
-    # pending → done | skipped | not_applicable | failed
-    PHASE_STATES = %w[pending done skipped not_applicable failed].freeze
+    # pending         not run yet
+    # done            the effect was applied (its marker committed with it)
+    # skipped         deliberately not applied: duplicate feedback, zero score
+    # not_applicable  never applies to this kind of event
+    # failed          raised; retried with backoff
+    # blocked         not run because no single current owner of the address
+    #                 was found; only an administrator reprocess runs it again
+    PHASE_STATES = %w[pending done skipped not_applicable failed blocked].freeze
     PHASE_FINISHED = %w[done skipped not_applicable].freeze
 
     MAX_ATTEMPTS = 8
@@ -32,12 +38,7 @@ module DiscoursePlunk
     validates :status, inclusion: { in: STATUSES }
 
     scope :retryable,
-          -> do
-            where(status: %w[received processing failed]).where(
-              "attempts < ?",
-              MAX_ATTEMPTS,
-            )
-          end
+          -> { where(status: %w[received processing failed]).where("attempts < ?", MAX_ATTEMPTS) }
 
     def unsubscribe?
       kind == UNSUBSCRIBE

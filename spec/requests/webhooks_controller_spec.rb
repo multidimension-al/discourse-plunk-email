@@ -69,7 +69,9 @@ RSpec.describe DiscoursePlunk::WebhooksController do
     end
 
     it "rejects an otherwise valid request that also carries a query string" do
-      post "/discourse-plunk/webhooks/complaint?x=1", params: complaint.to_json, headers: plunk_headers
+      post "/discourse-plunk/webhooks/complaint?x=1",
+           params: complaint.to_json,
+           headers: plunk_headers
 
       expect(response.status).to eq(400)
       expect(response.parsed_body["error"]).to eq("unexpected_query_string")
@@ -273,9 +275,9 @@ RSpec.describe DiscoursePlunk::WebhooksController do
         expect(response.status).to eq(200)
       end
 
-      expect(
-        DiscoursePlunk::FeedbackEvent.order(:id).pluck(:bounce_classification),
-      ).to eq(%w[permanent transient unknown])
+      expect(DiscoursePlunk::FeedbackEvent.order(:id).pluck(:bounce_classification)).to eq(
+        %w[permanent transient unknown],
+      )
       expect(email_off?(user)).to eq(true)
     end
 
@@ -315,7 +317,10 @@ RSpec.describe DiscoursePlunk::WebhooksController do
       post_plunk("complaint", complaint)
       matched = response.parsed_body
 
-      post_plunk("complaint", plunk_payload("synthetic-email-complaint", email: "nobody@example.com"))
+      post_plunk(
+        "complaint",
+        plunk_payload("synthetic-email-complaint", email: "nobody@example.com"),
+      )
       unmatched = response.parsed_body
 
       expect(matched.keys).to contain_exactly("status", "receipt_id")
@@ -370,7 +375,10 @@ RSpec.describe DiscoursePlunk::WebhooksController do
     end
 
     it "answers 500 when a receipt cannot be stored" do
-      DiscoursePlunk::FeedbackEvent.stubs(:insert_all).raises(ActiveRecord::StatementInvalid, "down")
+      DiscoursePlunk::FeedbackEvent.stubs(:insert_all).raises(
+        ActiveRecord::StatementInvalid,
+        "down",
+      )
 
       post_plunk("complaint", complaint)
 
@@ -403,7 +411,13 @@ RSpec.describe DiscoursePlunk::WebhooksController do
         "plunk_feedback_webhook_secret" => "[FILTERED]",
       )
       expect(
-        filter.filter("settings" => { "plunk_feedback_webhook_previous_secret" => { "value" => "x" } }),
+        filter.filter(
+          "settings" => {
+            "plunk_feedback_webhook_previous_secret" => {
+              "value" => "x",
+            },
+          },
+        ),
       ).to eq("settings" => { "plunk_feedback_webhook_previous_secret" => "[FILTERED]" })
       # Ordinary parameters elsewhere are untouched.
       expect(filter.filter("title" => "hello", "contact_email" => "a@b.c")).to eq(
@@ -425,7 +439,13 @@ RSpec.describe DiscoursePlunk::WebhooksController do
         Email::Receiver.stubs(:update_bounce_score).raises(ActiveRecord::StatementInvalid, "boom")
         post_plunk(
           "complaint",
-          plunk_payload("synthetic-email-complaint", email: user.email, event: { emailId: "other" }),
+          plunk_payload(
+            "synthetic-email-complaint",
+            email: user.email,
+            event: {
+              emailId: "other",
+            },
+          ),
         )
       ensure
         Rails.logger.stop_broadcasting_to(logger)

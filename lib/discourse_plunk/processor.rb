@@ -36,7 +36,10 @@ module DiscoursePlunk
     end
 
     def process
-      DistributedMutex.synchronize("discourse_plunk_event_#{@event_id}", validity: MUTEX_VALIDITY) do
+      DistributedMutex.synchronize(
+        "discourse_plunk_event_#{@event_id}",
+        validity: MUTEX_VALIDITY,
+      ) do
         @event = FeedbackEvent.find(@event_id)
         run if runnable?
       end
@@ -234,7 +237,7 @@ module DiscoursePlunk
       column = flag == :preference_applied ? :preference_state : :score_state
       prior =
         FeedbackEvent
-          .where(feedback_digest: event.feedback_digest, column => "done")
+          .where(:feedback_digest => event.feedback_digest, column => "done")
           .where.not(id: event.id)
           .order(:id)
           .pick(:id)
@@ -278,19 +281,23 @@ module DiscoursePlunk
     end
 
     def finish_without_account(status, outcome)
-      skip_pending_phases
+      block_unfinished_phases
       finish(status, outcome)
     end
 
     def finish_conflict(outcome)
-      skip_pending_phases
+      block_unfinished_phases
       finish("conflict", outcome)
     end
 
-    def skip_pending_phases
+    # "blocked", not "skipped": nothing was decided about these effects, so an
+    # administrator's reprocess (after, say, the address is added to the right
+    # account) must still run them.
+    def block_unfinished_phases
+      @event.reload
       attrs = {}
       %i[preference_state score_state correlation_state].each do |phase|
-        attrs[phase] = "skipped" if !finished?(@event.public_send(phase))
+        attrs[phase] = "blocked" if !finished?(@event.public_send(phase))
       end
       @event.update_columns(attrs) if attrs.any?
     end
@@ -311,7 +318,11 @@ module DiscoursePlunk
       @event.reload
       attempts = @event.attempts
       retry_at =
-        (Time.zone.now + FeedbackEvent.backoff_for(attempts) if attempts < FeedbackEvent::MAX_ATTEMPTS)
+        (
+          if attempts < FeedbackEvent::MAX_ATTEMPTS
+            Time.zone.now + FeedbackEvent.backoff_for(attempts)
+          end
+        )
 
       attrs = {
         status: "failed",
@@ -329,9 +340,7 @@ module DiscoursePlunk
         "discourse-plunk: receipt #{@event.id} failed in #{@phase} (attempt #{attempts}): #{error.class}",
       )
 
-      if retry_at
-        Jobs.enqueue_at(retry_at, :discourse_plunk_process_event, event_id: @event.id)
-      end
+      Jobs.enqueue_at(retry_at, :discourse_plunk_process_event, event_id: @event.id) if retry_at
     end
 
     EMAIL_PATTERN = /[^\s@<>"'(),;:]+@[^\s@<>"'(),;:]+/

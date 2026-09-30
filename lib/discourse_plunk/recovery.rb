@@ -36,12 +36,14 @@ module DiscoursePlunk
       return 0 if !SiteSetting.plunk_feedback_enabled
 
       count = 0
-      due.pluck(:id).each do |id|
-        Processor.process(id, trigger: :recovery)
-        count += 1
-      rescue StandardError => e
-        Rails.logger.warn("discourse-plunk: recovery of receipt #{id} failed: #{e.class}")
-      end
+      due
+        .pluck(:id)
+        .each do |id|
+          Processor.process(id, trigger: :recovery)
+          count += 1
+        rescue StandardError => e
+          Rails.logger.warn("discourse-plunk: recovery of receipt #{id} failed: #{e.class}")
+        end
       count
     end
   end

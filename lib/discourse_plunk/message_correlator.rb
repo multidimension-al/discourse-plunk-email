@@ -66,7 +66,9 @@ module DiscoursePlunk
         result("message_ambiguous")
       end
     rescue ActiveRecord::ActiveRecordError => e
-      Rails.logger.warn("discourse-plunk: EmailLog lookup failed for receipt #{@event.id}: #{e.class}")
+      Rails.logger.warn(
+        "discourse-plunk: EmailLog lookup failed for receipt #{@event.id}: #{e.class}",
+      )
       result("lookup_failed")
     end
 

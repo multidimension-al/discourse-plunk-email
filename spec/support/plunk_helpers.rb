@@ -57,7 +57,9 @@ module PlunkSpecHelpers
       digest_after_minutes: 10_080,
       mailing_list_mode: false,
     )
-    user.user_option.update!(chat_email_frequency: "when_away") if user.user_option.has_attribute?(:chat_email_frequency)
+    if user.user_option.has_attribute?(:chat_email_frequency)
+      user.user_option.update!(chat_email_frequency: "when_away")
+    end
   end
 end
 

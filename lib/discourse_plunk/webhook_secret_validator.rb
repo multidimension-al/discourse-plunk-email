@@ -13,7 +13,9 @@ module DiscoursePlunk
     MIN_LENGTH = 43 # 32 bytes, base64url without padding
     MAX_LENGTH = 256
     CHARSET = %r{\A[A-Za-z0-9+/=_.~-]+\z}
-    MIN_DISTINCT_CHARACTERS = 16
+    # Low enough that a random hex secret (16 possible characters) always
+    # passes; high enough to reject repeated patterns like "abcabc…".
+    MIN_DISTINCT_CHARACTERS = 10
 
     def initialize(opts = {})
       @opts = opts
@@ -28,10 +30,10 @@ module DiscoursePlunk
         @error = :length
       elsif !value.match?(CHARSET)
         @error = :charset
-      elsif value.chars.uniq.size < MIN_DISTINCT_CHARACTERS
-        @error = :entropy
       elsif reused_credential?(value)
         @error = :reused
+      elsif value.chars.uniq.size < MIN_DISTINCT_CHARACTERS
+        @error = :entropy
       end
 
       @error.nil?
@@ -49,8 +51,7 @@ module DiscoursePlunk
 
     def reused_credential?(value)
       smtp_password = GlobalSetting.smtp_password.to_s
-      if smtp_password.present? &&
-           ActiveSupport::SecurityUtils.secure_compare(smtp_password, value)
+      if smtp_password.present? && ActiveSupport::SecurityUtils.secure_compare(smtp_password, value)
         return true
       end
 

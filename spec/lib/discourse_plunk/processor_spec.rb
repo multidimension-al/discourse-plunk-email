@@ -219,9 +219,9 @@ RSpec.describe DiscoursePlunk::Processor do
       )
       expect(Bookmark.where(user: user).count).to eq(1)
       expect(GroupUser.exists?(group: group, user: user)).to eq(true)
-      expect(
-        CategoryUser.find_by(user: user, category: category).notification_level,
-      ).to eq(CategoryUser.notification_levels[:watching])
+      expect(CategoryUser.find_by(user: user, category: category).notification_level).to eq(
+        CategoryUser.notification_levels[:watching],
+      )
       expect(TopicUser.get(topic, user).notification_level).to eq(
         TopicUser.notification_levels[:watching],
       )
@@ -336,7 +336,7 @@ RSpec.describe DiscoursePlunk::Processor do
           status: "unmatched",
           outcome: "unknown_recipient",
           next_attempt_at: nil,
-          preference_state: "skipped",
+          preference_state: "blocked",
         )
       }.not_to change { User.count }
 
@@ -350,7 +350,11 @@ RSpec.describe DiscoursePlunk::Processor do
       Fabricate(:email_log, user: user, to_address: "old-alias@example.com", message_id: "m-old")
       secondary.destroy!
 
-      event = receive_plunk("complaint", complaint(email: "old-alias@example.com", event: { messageId: "m-old" }))
+      event =
+        receive_plunk(
+          "complaint",
+          complaint(email: "old-alias@example.com", event: { messageId: "m-old" }),
+        )
 
       expect(event.status).to eq("unmatched")
       expect_untouched(user)
@@ -361,7 +365,10 @@ RSpec.describe DiscoursePlunk::Processor do
       user.primary_email.update!(email: "new-member@example.com")
 
       event =
-        receive_plunk("complaint", complaint(email: "member@example.com", event: { messageId: "m-1" }))
+        receive_plunk(
+          "complaint",
+          complaint(email: "member@example.com", event: { messageId: "m-1" }),
+        )
 
       expect(event.status).to eq("unmatched")
       expect_untouched(user)
@@ -376,8 +383,8 @@ RSpec.describe DiscoursePlunk::Processor do
         status: "conflict",
         outcome: "message_user_conflict",
         correlation: "message_user_conflict",
-        preference_state: "skipped",
-        score_state: "skipped",
+        preference_state: "blocked",
+        score_state: "blocked",
       )
       expect_untouched(user)
       expect_untouched(bystander)
@@ -410,9 +417,7 @@ RSpec.describe DiscoursePlunk::Processor do
       user.primary_email.update!(email: "member-new@example.com")
       bystander.primary_email.update!(email: "member@example.com")
 
-      freeze_time(2.minutes.from_now) do
-        event = described_class.process(event, trigger: :retry)
-      end
+      freeze_time(2.minutes.from_now) { event = described_class.process(event, trigger: :retry) }
 
       expect(event).to have_attributes(status: "conflict", outcome: "recipient_owner_changed")
       expect(bounce_score(user)).to eq(0)
@@ -452,7 +457,12 @@ RSpec.describe DiscoursePlunk::Processor do
 
     it "records the match for a complaint without marking the log bounced" do
       log =
-        Fabricate(:email_log, user: user, to_address: user.email, message_id: "test-provider-message-id")
+        Fabricate(
+          :email_log,
+          user: user,
+          to_address: user.email,
+          message_id: "test-provider-message-id",
+        )
 
       event = receive_plunk("complaint", complaint)
 
@@ -502,7 +512,9 @@ RSpec.describe DiscoursePlunk::Processor do
       DiscoursePlunk::MessageCorrelator
         .any_instance
         .stubs(:correlate)
-        .returns(DiscoursePlunk::MessageCorrelator::Result.new(label: "lookup_failed", email_log_id: nil))
+        .returns(
+          DiscoursePlunk::MessageCorrelator::Result.new(label: "lookup_failed", email_log_id: nil),
+        )
 
       event = receive_plunk("bounce", bounce("permanent"))
 
@@ -636,7 +648,10 @@ RSpec.describe DiscoursePlunk::Processor do
 
   describe "failures and retries" do
     it "keeps the preference change when scoring fails, and retries only the score" do
-      Email::Receiver.stubs(:update_bounce_score).raises(ActiveRecord::StatementInvalid, "db hiccup")
+      Email::Receiver.stubs(:update_bounce_score).raises(
+        ActiveRecord::StatementInvalid,
+        "db hiccup",
+      )
 
       event = receive_plunk("complaint", complaint)
 
@@ -670,7 +685,10 @@ RSpec.describe DiscoursePlunk::Processor do
 
     it "rolls the score back with its marker, then applies it exactly once on retry" do
       SiteSetting.bounce_score_threshold = SiteSetting.hard_bounce_score
-      SystemMessage.stubs(:create_from_system_user).raises(ActiveRecord::StatementInvalid, "pm failed")
+      SystemMessage.stubs(:create_from_system_user).raises(
+        ActiveRecord::StatementInvalid,
+        "pm failed",
+      )
 
       event = receive_plunk("complaint", complaint)
 
@@ -725,11 +743,16 @@ RSpec.describe DiscoursePlunk::Processor do
       receive_plunk("complaint", complaint(event: { emailId: "b" })) # same complaint again
 
       expect(bounce_score).to eq(SiteSetting.bounce_score_threshold)
-      expect(UserHistory.where(action: UserHistory.actions[:revoke_email], target_user_id: user.id).count).to eq(1)
+      expect(
+        UserHistory.where(
+          action: UserHistory.actions[:revoke_email],
+          target_user_id: user.id,
+        ).count,
+      ).to eq(1)
       revoked =
-        Topic
-          .private_messages_for_user(user)
-          .where(title: I18n.t("system_messages.email_revoked.subject_template"))
+        Topic.private_messages_for_user(user).where(
+          title: I18n.t("system_messages.email_revoked.subject_template"),
+        )
       expect(revoked.count).to eq(1)
       expect(ActionMailer::Base.deliveries.map(&:to).flatten).not_to include(user.email)
     end

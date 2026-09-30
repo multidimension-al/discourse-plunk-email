@@ -18,7 +18,11 @@ module DiscoursePlunk
   #   405             not a POST
   #   409             delivery identity reused with different content
   #   500/503         could not process or safely accept; Plunk must show it
-  class WebhooksController < ::ActionController::Base
+  #
+  # No requires_plugin: while the plugin is disabled every request is refused
+  # below with an explicit 503 "receiver_disabled", which Plunk's execution
+  # log shows verbatim, rather than an anonymous 404.
+  class WebhooksController < ::ActionController::Base # rubocop:disable Discourse/Plugins/CallRequiresPlugin
     include ::ReadOnlyMixin
 
     MAX_BODY_BYTES = 64.kilobytes
