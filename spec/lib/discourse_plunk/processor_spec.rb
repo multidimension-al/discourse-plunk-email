@@ -51,7 +51,7 @@ RSpec.describe DiscoursePlunk::Processor do
     expect(u.user_stat.reload.bounce_score).to eq(0)
   end
 
-  describe "the owner's policy for each event" do
+  describe "the default policy for each event" do
     it "complaint: every optional email off, the hard-bounce score once, complaint classification kept" do
       event = receive_plunk("complaint", complaint)
 
@@ -149,6 +149,80 @@ RSpec.describe DiscoursePlunk::Processor do
       receive_plunk("complaint", payload)
 
       expect_all_optional_email_off
+    end
+  end
+
+  describe "plunk_feedback_bounce_opt_out" do
+    def expect_email_still_on
+      expect(user.user_option.reload.email_level).to eq(UserOption.email_level_types[:always])
+      expect(user.user_option.chat_email_frequency).to eq("when_away")
+    end
+
+    it "defaults to opting out on every bounce" do
+      expect(SiteSetting.plunk_feedback_bounce_opt_out).to eq("all")
+    end
+
+    context "when set to permanent" do
+      before { SiteSetting.plunk_feedback_bounce_opt_out = "permanent" }
+
+      it "scores a transient bounce without touching preferences" do
+        event = receive_plunk("bounce", bounce("transient"))
+
+        expect(event).to have_attributes(
+          status: "processed",
+          outcome: "score_only",
+          preference_state: "skipped",
+          score_effect: "soft_bounce_score",
+        )
+        expect(event.preference_changes["skipped_by_setting"]).to eq(
+          "plunk_feedback_bounce_opt_out=permanent",
+        )
+        expect_email_still_on
+        expect(bounce_score).to eq(SiteSetting.soft_bounce_score)
+        expect(UserHistory.where(custom_type: "plunk_feedback_email_opt_out").count).to eq(0)
+      end
+
+      it "scores an unknown bounce without touching preferences" do
+        receive_plunk("bounce", bounce("undetermined"))
+
+        expect_email_still_on
+        expect(bounce_score).to eq(SiteSetting.soft_bounce_score)
+      end
+
+      it "still opts out on a permanent bounce, a complaint and an unsubscribe" do
+        receive_plunk("bounce", bounce("permanent"))
+        expect_all_optional_email_off
+
+        opt_in!(user)
+        receive_plunk("complaint", complaint)
+        expect_all_optional_email_off
+
+        opt_in!(user)
+        receive_plunk("unsubscribe", unsubscribe)
+        expect_all_optional_email_off
+      end
+    end
+
+    context "when set to permanent_and_unknown" do
+      before { SiteSetting.plunk_feedback_bounce_opt_out = "permanent_and_unknown" }
+
+      it "opts out on an unknown bounce but not a transient one" do
+        receive_plunk("bounce", bounce("transient"))
+        expect_email_still_on
+
+        receive_plunk("bounce", bounce("undetermined"))
+        expect_all_optional_email_off
+      end
+    end
+
+    it "does not let a transient bounce that only scored block a later hard bounce's opt-out" do
+      SiteSetting.plunk_feedback_bounce_opt_out = "permanent"
+      receive_plunk("bounce", bounce("transient"))
+      hard = receive_plunk("bounce", bounce("permanent"))
+
+      expect(hard.outcome).to eq("applied")
+      expect_all_optional_email_off
+      expect(bounce_score).to eq(SiteSetting.soft_bounce_score + SiteSetting.hard_bounce_score)
     end
   end
 

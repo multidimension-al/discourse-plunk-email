@@ -45,7 +45,7 @@ calls the same `DiscoursePlunk::Processor`.
 |---|---|---|
 | Turn off all optional email | `UnsubscribeKey.get_unsubscribe_strategy_for` with an in-memory, never-saved `UnsubscribeKey` of type `digest`, called with `unsubscribe_all` and the "never" digest frequency. That runs `EmailControllerHelper::BaseEmailUnsubscriber#unsubscribe` (email_level and email_messages_level → `:never`, email_digests and mailing_list_mode → false) followed by `DigestEmailUnsubscriber` (digest_after_minutes → the `never` value of `DigestEmailSiteSetting`). | `lib/email_controller_helper/*.rb`, `app/models/unsubscribe_key.rb` |
 | Chat summaries | Chat's registered `chat_summary` strategy (`ChatSummaryUnsubscriber`) with `chat_email_frequency: "never"`; direct write of the named enum value when Chat is installed but disabled (its strategy is then unregistered). | `plugins/chat/lib/email_controller_helper/chat_summary_unsubscriber.rb` |
-| Policy reminders | discourse-policy's `policy_email` strategy the same way (`policy_email_frequency: "never"`). Both Chat and Policy are enabled on forum.gbfans.com. | `plugins/discourse-policy/lib/email_controller_helper/policy_email_unsubscriber.rb` |
+| Policy reminders | discourse-policy's `policy_email` strategy the same way (`policy_email_frequency: "never"`), when discourse-policy is installed. | `plugins/discourse-policy/lib/email_controller_helper/policy_email_unsubscriber.rb` |
 | Postcondition | `UserOption#unsubscribed_from_all?` plus digest frequency, mailing-list column and every installed plugin frequency; the phase fails rather than report success otherwise. | `app/models/user_option.rb` |
 | Bounce score | `Email::Receiver.update_bounce_score(email, score)` with `SiteSetting.hard_bounce_score` / `soft_bounce_score`, inside the plugin's transaction. Threshold, `reset_bounce_score_after`, the staff "revoke email" log and the `email_revoked` system message all stay native. | `lib/email/receiver.rb` |
 | Message correlation | `EmailLog.message_id` (Discourse's generated Message-ID) and `to_address`, exact match only. | `app/models/email_log.rb`, `lib/email/sender.rb` |
@@ -126,17 +126,20 @@ after adding the address to the right account) can still apply them.
    global per-IP limit) leaves no receipt here; only Plunk's workflow
    execution history shows it. Discourse's global limits (default 50
    requests / 10 s and 200 / minute per IP) apply to these routes.
-6. **Project-wide opt-out.** A `contact.unsubscribed` from the GBFans Plunk
-   project — including a Plunk "snooze" — turns off *all* optional forum
-   email. The payload cannot prove a narrower preference, so none is
-   inferred. Plunk's own `snooze_expired` resubscribe is not mirrored.
+6. **Project-wide opt-out.** A `contact.unsubscribed` from the Plunk project
+   the workflows live in — including a Plunk "snooze" — turns off *all*
+   optional forum email. The payload cannot prove a narrower preference, so
+   none is inferred. Plunk's own `snooze_expired` resubscribe is not
+   mirrored.
 7. **No reverse synchronisation.** Opting back in on Discourse does not
    resubscribe the Plunk contact, and later Plunk subscribe/delivery/open
    events do not re-enable Discourse email.
-8. **All bounces opt out (owner policy).** Plunk itself unsubscribes only on
-   permanent bounces and complaints; this plugin turns optional email off on
-   every accepted bounce, including transient and undetermined ones, while
-   scoring them as soft.
+8. **Which bounces opt out is a setting.** Plunk itself unsubscribes a
+   contact only on permanent bounces and complaints. This plugin's default
+   (`plunk_feedback_bounce_opt_out: all`) turns optional email off on every
+   accepted bounce, including transient and undetermined ones, while scoring
+   those as soft; `permanent_and_unknown` and `permanent` narrow it. Bounces
+   that do not opt out still add native bounce score (outcome `score_only`).
 9. **Core's revoke-email log includes the address.** When the native bounce
    threshold is crossed, core writes the address into the staff "revoke
    email" entry (visible to moderators). The plugin's own staff entries never

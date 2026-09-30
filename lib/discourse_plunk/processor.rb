@@ -115,6 +115,19 @@ module DiscoursePlunk
     def apply_preferences(user)
       return if finished?(@event.preference_state)
 
+      if !opts_out?(@event)
+        # The site has chosen not to treat this class of bounce as an opt-out;
+        # the bounce is still scored below.
+        @event.update_columns(
+          preference_state: "skipped",
+          preference_changes: {
+            "skipped_by_setting" =>
+              "plunk_feedback_bounce_opt_out=#{SiteSetting.plunk_feedback_bounce_opt_out}",
+          },
+        )
+        return
+      end
+
       FeedbackEvent.transaction(requires_new: true) do
         event = FeedbackEvent.lock.find(@event.id)
         next if finished?(event.preference_state)
@@ -220,6 +233,22 @@ module DiscoursePlunk
       @event.reload
     end
 
+    # Unsubscribes and complaints always opt out. Which bounces do is the
+    # site's choice (plunk_feedback_bounce_opt_out); the classification is
+    # Plunk's, never upgraded.
+    def opts_out?(event)
+      return true if !event.bounce?
+
+      case SiteSetting.plunk_feedback_bounce_opt_out
+      when "permanent"
+        event.bounce_classification == "permanent"
+      when "permanent_and_unknown"
+        %w[permanent unknown].include?(event.bounce_classification)
+      else
+        true
+      end
+    end
+
     # Complaints use the hard-bounce score, as core's own Postmark adapter
     # does; the event keeps its complaint classification. An unknown bounce
     # classification is scored as soft: a delivery failure happened, but
@@ -274,6 +303,8 @@ module DiscoursePlunk
       outcome =
         if @event.preference_state == "done"
           @event.preference_changes.dig("changes").present? ? "applied" : "already_unsubscribed"
+        elsif @event.preference_changes["skipped_by_setting"].present?
+          "score_only"
         elsif @event.duplicate_of_event_id.present?
           "duplicate_feedback"
         else
