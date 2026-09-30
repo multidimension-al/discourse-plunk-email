@@ -37,13 +37,21 @@ Architecture and the precise limitations are in
 | `contact.unsubscribed` | `/discourse-plunk/webhooks/unsubscribe` | all off | none, whatever `reason` Plunk gives (`bounce`, `complaint`, `snooze`) |
 | `email.complaint` | `/discourse-plunk/webhooks/complaint` | all off | `hard_bounce_score` once (core's Postmark handler scores complaints the same way); recorded as a complaint |
 | `email.bounce`, `bounceType: Permanent` | `/discourse-plunk/webhooks/bounce` | all off | `hard_bounce_score` once |
-| `email.bounce`, `bounceType: Transient` | same | all off | `soft_bounce_score` once; recorded as transient |
-| `email.bounce`, `Undetermined`, missing or anything else | same | all off | `soft_bounce_score` once; recorded as `unknown` — never promoted to permanent, no SMTP code invented |
+| `email.bounce`, `bounceType: Transient` | same | all off by default¹ | `soft_bounce_score` once; recorded as transient |
+| `email.bounce`, `Undetermined`, missing or anything else | same | all off by default¹ | `soft_bounce_score` once; recorded as `unknown` — never promoted to permanent, no SMTP code invented |
 
-Turning a *temporary* bounce into a full opt-out is this forum's policy, not
-a claim that the bounce is permanent; the real classification is kept in the
-ledger and in the score used. (Plunk itself only unsubscribes a contact on a
-permanent bounce or a complaint.)
+¹ Set by `plunk feedback bounce opt out`:
+
+| Value | Bounces that turn optional email off |
+|---|---|
+| `all` (default) | every bounce, including temporary ones |
+| `permanent_and_unknown` | permanent bounces and bounces Plunk could not classify |
+| `permanent` | permanent bounces only — the same rule Plunk applies to its own contacts |
+
+Bounces that do not opt out are still recorded and still add the native
+bounce score. Treating a temporary bounce as an opt-out is a policy choice,
+not a claim that the bounce was permanent: the real classification is always
+kept in the ledger and in the score used.
 
 "All off" means, for the matched account:
 
@@ -53,8 +61,8 @@ permanent bounce or a complaint.)
 - `digest_after_minutes` → the **never** digest frequency, so the preferences
   page shows a coherent value,
 - `chat_email_frequency` → **never** (bundled Chat) and
-  `policy_email_frequency` → **never** (discourse-policy) when installed —
-  both are enabled on forum.gbfans.com.
+  `policy_email_frequency` → **never** (discourse-policy), when those plugins
+  are installed.
 
 Nothing else changes: in-app and push notifications, watched topics and
 categories, bookmarks, groups, trust level, account status and login all stay
@@ -73,8 +81,7 @@ logged and left alone. Nothing is ever re-enabled automatically.
 
 ## Tested version
 
-Tested against the version forum.gbfans.com reported on 30 September 2026
-(`<meta name="generator">`): **Discourse 2026.9.0-latest, commit
+Tested on 30 September 2026 against **Discourse 2026.9.0-latest, commit
 [`670dd6be75cb9f378330151ccd60d348ab2b589b`](https://github.com/discourse/discourse/commit/670dd6be75cb9f378330151ccd60d348ab2b589b)**,
 with every bundled plugin loaded (`LOAD_PLUGINS=1`, including Chat and
 discourse-policy). Local environment: Ruby 3.4.9, PostgreSQL 16.15 with
@@ -124,34 +131,38 @@ every webhook request is refused.
 2. **Admin → Plugins → Plunk feedback → Settings**
    - `plunk feedback webhook secret`: paste the secret.
    - `plunk feedback enabled`: check.
+   - `plunk feedback bounce opt out`: which bounces turn optional email off
+     (see [What it does](#what-it-does)); `all` by default.
    - `plunk feedback event retention days`: 365 by default.
 3. Open the **Feedback events** tab. It shows the three absolute webhook URLs
    with copy buttons (built from the forum's public base URL, including any
    subfolder), whether the secret is configured (never the secret itself),
    and whether the retry worker is running.
 
-For forum.gbfans.com the URLs are:
+For a forum at `https://forum.example.com` they are:
 
 ```
-https://forum.gbfans.com/discourse-plunk/webhooks/unsubscribe
-https://forum.gbfans.com/discourse-plunk/webhooks/complaint
-https://forum.gbfans.com/discourse-plunk/webhooks/bounce
+https://forum.example.com/discourse-plunk/webhooks/unsubscribe
+https://forum.example.com/discourse-plunk/webhooks/complaint
+https://forum.example.com/discourse-plunk/webhooks/bounce
 ```
 
 ## Set up the three Plunk workflows
 
-Create these **in the GBFans Plunk project only** — the project, and the
-workflows you create in it, decide which feedback reaches the forum. A
-`contact.unsubscribed` anywhere in that project becomes a forum-wide
-optional-email opt-out.
+Create these **only in the Plunk project that sends your forum's email** —
+the project, and the workflows you create in it, decide which feedback
+reaches the forum. A `contact.unsubscribed` anywhere in that project becomes a
+forum-wide optional-email opt-out, so if the same project also sends other
+mail (newsletters, another site), unsubscribes from that mail will turn off
+forum email too.
 
 In the Plunk dashboard, **Workflows → New workflow**, three times:
 
 | Workflow name (suggested) | Trigger (event) | Webhook step URL |
 |---|---|---|
-| Discourse unsubscribe feedback | `contact.unsubscribed` | `https://forum.gbfans.com/discourse-plunk/webhooks/unsubscribe` |
-| Discourse complaint feedback | `email.complaint` | `https://forum.gbfans.com/discourse-plunk/webhooks/complaint` |
-| Discourse bounce feedback | `email.bounce` | `https://forum.gbfans.com/discourse-plunk/webhooks/bounce` |
+| Discourse unsubscribe feedback | `contact.unsubscribed` | `https://<your forum>/discourse-plunk/webhooks/unsubscribe` |
+| Discourse complaint feedback | `email.complaint` | `https://<your forum>/discourse-plunk/webhooks/complaint` |
+| Discourse bounce feedback | `email.bounce` | `https://<your forum>/discourse-plunk/webhooks/bounce` |
 
 For each workflow:
 
@@ -238,7 +249,7 @@ made up) are the request bodies; run these commands from a checkout of this
 repository, with `curl` 7.55 or later and `jq`.
 
 ```sh
-FORUM=https://staging.example.com      # or the production forum, test account only
+FORUM=https://staging.example.com      # or your live forum, test account only
 TEST_ADDRESS=your-test-account@example.com
 
 # Keep the secret out of the command line and shell history.
@@ -301,7 +312,9 @@ another account, or the address changed hands mid-retry — nothing
 cross-applied, never retried), `failed` (retrying, or retries exhausted),
 `received`/`processing` (in flight).
 
-Outcomes: `applied`, `already_unsubscribed`, `duplicate_feedback`,
+Outcomes: `applied`, `already_unsubscribed`, `score_only` (a bounce the
+`plunk feedback bounce opt out` setting does not treat as an opt-out),
+`duplicate_feedback`,
 `unknown_recipient`, `non_human_account`, `ambiguous_recipient`,
 `message_user_conflict`, `recipient_owner_changed`, `retry_scheduled`,
 `retries_exhausted`.
@@ -459,8 +472,8 @@ bundle exec stree check Gemfile $(git ls-files '*.rb' '*.rake')
 pnpm install && pnpm lint
 ```
 
-Result on 30 September 2026 against commit `670dd6be75`: **161 examples, 0
-failures** (40 webhook request, 12 admin API, 50 processor, 13 payload, 12
+Result on 30 September 2026 against commit `670dd6be75`: **167 examples, 0
+failures** (40 webhook request, 12 admin API, 56 processor, 13 payload, 12
 secret validator, 5 backfill/rollback, 4 retention, 19 email-path
 integration, 3 real-thread concurrency, 3 admin-page system specs); rubocop,
 syntax_tree, eslint and prettier clean. Every spec runs against real

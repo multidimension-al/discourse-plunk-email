@@ -12,6 +12,14 @@ plugins:
     secret: true
     client: false
     validator: "DiscoursePlunk::WebhookSecretValidator"
+  plunk_feedback_bounce_opt_out:
+    default: "all"
+    type: enum
+    choices:
+      - all
+      - permanent_and_unknown
+      - permanent
+    client: false
   plunk_feedback_event_retention_days:
     default: 365
     min: 30
