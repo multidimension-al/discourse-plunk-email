@@ -128,13 +128,15 @@ module DiscoursePlunk
       secrets.map { |secret| ActiveSupport::SecurityUtils.secure_compare(secret, token) }.any?
     end
 
+    # Refuses on the declared length first; raw_post (which Rails caches and
+    # which does not depend on a rewindable rack.input) is then re-checked,
+    # since a chunked request declares no length. nginx's
+    # client_max_body_size bounds what can be read at all.
     def read_body
       return if request.content_length.to_i > MAX_BODY_BYTES
 
-      io = request.body
-      io.rewind if io.respond_to?(:rewind)
-      body = io.read(MAX_BODY_BYTES + 1).to_s
-      body.bytesize > MAX_BODY_BYTES ? nil : body
+      body = request.raw_post.to_s
+      body.bytesize > MAX_BODY_BYTES ? nil : body.dup
     end
 
     def respond_for(event, duplicate: false)

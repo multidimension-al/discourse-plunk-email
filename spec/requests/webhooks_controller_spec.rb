@@ -104,11 +104,15 @@ RSpec.describe DiscoursePlunk::WebhooksController do
 
     it "works without a browser session or CSRF token on a login-required forum" do
       SiteSetting.login_required = true
+      ActionController::Base.allow_forgery_protection = true
+
       post_plunk("complaint", complaint)
 
       expect(response.status).to eq(200)
       expect(response.headers["Location"]).to be_nil
       expect(email_off?(user)).to eq(true)
+    ensure
+      ActionController::Base.allow_forgery_protection = false
     end
 
     it "keeps CSRF protection on for the rest of the site" do
