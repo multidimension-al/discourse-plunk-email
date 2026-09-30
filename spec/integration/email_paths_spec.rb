@@ -176,6 +176,26 @@ RSpec.describe "Plunk feedback and Discourse's email paths" do
     end
   end
 
+  describe "Policy reminder email" do
+    it "is sent before feedback; a reminder queued afterwards is skipped" do
+      user.user_option.reload.update!(policy_email_frequency: "always")
+
+      Jobs::UserEmail.new.execute(type: :policy_email, user_id: user.id, post_id: first_post.id)
+      expect(deliveries_to(user).size).to eq(1)
+
+      ActionMailer::Base.deliveries.clear
+      receive_plunk("complaint", complaint)
+      expect(user.user_option.reload.policy_email_frequency).to eq("never")
+
+      # discourse-policy enqueues this job without re-reading the preference.
+      Jobs::UserEmail.new.execute(type: :policy_email, user_id: user.id, post_id: first_post.id)
+      expect(deliveries_to(user)).to be_empty
+      expect(SkippedEmailLog.where(user_id: user.id).last.custom_reason).to include(
+        "policy_email_frequency",
+      )
+    end
+  end
+
   describe "email queued before the feedback arrived" do
     # Sidekiq is in fake mode here: jobs are queued, not run, as in production
     # during email_time_window_mins.

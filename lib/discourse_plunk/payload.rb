@@ -34,6 +34,9 @@ module DiscoursePlunk
     SOURCE_TYPE_MAX = 32
     TIMESTAMP_MAX = 64
     CONTROL_CHARACTERS = /[[:cntrl:]]/
+    # String#strip also removes NUL; trim ordinary whitespace only, so any
+    # other control character is still seen (and rejected).
+    SURROUNDING_WHITESPACE = /\A[ \t\r\n]+|[ \t\r\n]+\z/
 
     Event =
       Data.define(
@@ -211,7 +214,7 @@ module DiscoursePlunk
         return
       end
 
-      email = value.strip
+      email = trim(value)
       if email.empty?
         @errors << "contact.email is required"
       elsif email.length > EMAIL_MAX || email.match?(CONTROL_CHARACTERS) || !Email.is_valid?(email)
@@ -280,7 +283,7 @@ module DiscoursePlunk
         return
       end
 
-      value = value.strip
+      value = trim(value)
       return if value.empty?
 
       if value.length > max
@@ -307,7 +310,11 @@ module DiscoursePlunk
         return
       end
 
-      value.gsub(CONTROL_CHARACTERS, " ").strip.truncate(max).presence
+      trim(value.gsub(CONTROL_CHARACTERS, " ")).truncate(max).presence
+    end
+
+    def trim(value)
+      value.gsub(SURROUNDING_WHITESPACE, "")
     end
 
     def timestamp(hash, path)

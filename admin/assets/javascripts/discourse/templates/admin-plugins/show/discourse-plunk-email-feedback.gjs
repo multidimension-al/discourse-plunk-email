@@ -32,6 +32,10 @@ function when(value) {
     : i18n("discourse_plunk.admin.never");
 }
 
+function whenOrDash(value) {
+  return value ? new Date(value).toLocaleString() : "—";
+}
+
 function kindLabel(kind) {
   return i18n(`discourse_plunk.admin.kinds.${kind.replace(".", "_")}`);
 }
@@ -261,7 +265,7 @@ export default <template>
               <dt>{{i18n "discourse_plunk.admin.detail.received_at"}}</dt>
               <dd>{{when event.received_at}}</dd>
               <dt>{{i18n "discourse_plunk.admin.detail.processed_at"}}</dt>
-              <dd>{{when event.processed_at}}</dd>
+              <dd>{{whenOrDash event.processed_at}}</dd>
             </dl>
 
             <h3>{{i18n "discourse_plunk.admin.detail.delivery"}}</h3>
@@ -274,7 +278,7 @@ export default <template>
               <dt>{{i18n
                   "discourse_plunk.admin.detail.execution_started_at"
                 }}</dt>
-              <dd>{{when event.execution_started_at}}</dd>
+              <dd>{{whenOrDash event.execution_started_at}}</dd>
               <dt>{{i18n "discourse_plunk.admin.detail.delivery_count"}}</dt>
               <dd>{{event.delivery_count}}</dd>
               <dt>{{i18n
@@ -308,7 +312,7 @@ export default <template>
                 }}</dt>
               <dd>{{show event.unsubscribe_reason}}</dd>
               <dt>{{i18n "discourse_plunk.admin.detail.occurred_at"}}</dt>
-              <dd>{{when event.occurred_at}}</dd>
+              <dd>{{whenOrDash event.occurred_at}}</dd>
             </dl>
 
             <h3>{{i18n "discourse_plunk.admin.detail.matching"}}</h3>
@@ -368,9 +372,9 @@ export default <template>
               <dt>{{i18n "discourse_plunk.admin.detail.attempts"}}</dt>
               <dd>{{event.attempts}}</dd>
               <dt>{{i18n "discourse_plunk.admin.detail.last_attempt_at"}}</dt>
-              <dd>{{when event.last_attempt_at}}</dd>
+              <dd>{{whenOrDash event.last_attempt_at}}</dd>
               <dt>{{i18n "discourse_plunk.admin.detail.next_attempt_at"}}</dt>
-              <dd>{{when event.next_attempt_at}}</dd>
+              <dd>{{whenOrDash event.next_attempt_at}}</dd>
               <dt>{{i18n "discourse_plunk.admin.detail.last_error"}}</dt>
               <dd class="plunk-feedback-admin__error">{{show
                   event.last_error

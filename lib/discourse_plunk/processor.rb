@@ -43,6 +43,9 @@ module DiscoursePlunk
         @event = FeedbackEvent.find(@event_id)
         run if runnable?
       end
+      # Scheduled only once the mutex is released: where jobs run inline
+      # (Jobs.run_immediately!), the retry must not re-enter this lock.
+      Jobs.enqueue_at(@retry_at, :discourse_plunk_process_event, event_id: @event_id) if @retry_at
       FeedbackEvent.find(@event_id)
     end
 
@@ -340,7 +343,7 @@ module DiscoursePlunk
         "discourse-plunk: receipt #{@event.id} failed in #{@phase} (attempt #{attempts}): #{error.class}",
       )
 
-      Jobs.enqueue_at(retry_at, :discourse_plunk_process_event, event_id: @event.id) if retry_at
+      @retry_at = retry_at
     end
 
     EMAIL_PATTERN = /[^\s@<>"'(),;:]+@[^\s@<>"'(),;:]+/
