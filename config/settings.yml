@@ -1,0 +1,19 @@
+plugins:
+  plunk_feedback_enabled:
+    default: false
+    client: false
+  plunk_feedback_webhook_secret:
+    default: ""
+    secret: true
+    client: false
+    validator: "DiscoursePlunk::WebhookSecretValidator"
+  plunk_feedback_webhook_previous_secret:
+    default: ""
+    secret: true
+    client: false
+    validator: "DiscoursePlunk::WebhookSecretValidator"
+  plunk_feedback_event_retention_days:
+    default: 365
+    min: 30
+    max: 3650
+    client: false

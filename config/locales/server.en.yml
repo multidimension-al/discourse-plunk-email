@@ -1,0 +1,16 @@
+en:
+  site_settings:
+    plunk_feedback_enabled: "Receive Plunk unsubscribe, complaint and bounce webhooks and apply them to Discourse email preferences. While off, the webhook URLs reject every request."
+    plunk_feedback_webhook_secret: "Shared secret Plunk sends as `Authorization: Bearer <secret>` on every webhook step. Generate it with `openssl rand -base64 48` (at least 32 random bytes). Must not be an API key or the SMTP password. Empty means not configured: every webhook is rejected."
+    plunk_feedback_webhook_previous_secret: "During a secret rotation only: the old secret, still accepted until every Plunk webhook step sends the new one. Clear it when the rotation is finished."
+    plunk_feedback_event_retention_days: "Days to keep finished Plunk feedback events in the admin history. Older events are deleted; hashed deduplication records are kept so an old delivery is never treated as new."
+    errors:
+      plunk_feedback_webhook_secret:
+        length: "must be between %{min} and %{max} characters (generate it with `openssl rand -base64 48`)"
+        charset: "may only contain letters, digits and + / = _ . ~ -"
+        entropy: "does not look random; generate it with `openssl rand -base64 48`"
+        reused: "is an existing API key or the SMTP password; generate a new, independent secret"
+  discourse_plunk:
+    skipped_email_reason: "Not sent: the recipient's %{preference} preference is off after Plunk feedback."
+    errors:
+      disabled: "Enable plunk_feedback_enabled before reprocessing events."

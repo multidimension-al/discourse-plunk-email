@@ -1,0 +1,26 @@
+{
+  "contact": {
+    "email": "plunk-test@example.com",
+    "subscribed": false,
+    "data": {}
+  },
+  "workflow": {
+    "id": "wf_test_complaint",
+    "name": "Discourse complaint feedback"
+  },
+  "execution": {
+    "id": "exec_test_001",
+    "startedAt": "2026-09-30T12:00:00.000Z"
+  },
+  "event": {
+    "subject": "Synthetic subject that must not be stored",
+    "from": "forum@example.com",
+    "fromName": "Synthetic Forum",
+    "emailId": "test-plunk-email-id",
+    "messageId": "test-provider-message-id",
+    "templateId": null,
+    "campaignId": null,
+    "sourceType": "TRANSACTIONAL",
+    "complainedAt": "2026-09-30T12:00:00.000Z"
+  }
+}

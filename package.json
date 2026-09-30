@@ -1,0 +1,20 @@
+{
+  "private": true,
+  "devDependencies": {
+    "@discourse/lint-configs": "3.2.0",
+    "eslint": "10.6.0",
+    "prettier": "3.8.1"
+  },
+  "scripts": {
+    "lint": "concurrently \"pnpm:lint:*(!fix)\" --names \"lint:\"",
+    "lint:js": "eslint {assets,admin/assets,test}/javascripts --no-error-on-unmatched-pattern",
+    "lint:js:fix": "eslint {assets,admin/assets,test}/javascripts --fix --no-error-on-unmatched-pattern",
+    "lint:prettier": "pnpm prettier 'assets/stylesheets/**/*.scss' '{assets,admin/assets,test}/javascripts/**/*.{js,gjs}' --check --no-error-on-unmatched-pattern",
+    "lint:prettier:fix": "pnpm prettier 'assets/stylesheets/**/*.scss' '{assets,admin/assets,test}/javascripts/**/*.{js,gjs}' -w --no-error-on-unmatched-pattern"
+  },
+  "engines": {
+    "node": ">= 22",
+    "pnpm": "^10"
+  },
+  "packageManager": "pnpm@10.33.0"
+}

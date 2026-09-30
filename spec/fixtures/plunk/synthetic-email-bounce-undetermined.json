@@ -1,0 +1,27 @@
+{
+  "contact": {
+    "email": "plunk-test@example.com",
+    "subscribed": false,
+    "data": {}
+  },
+  "workflow": {
+    "id": "wf_test_bounce",
+    "name": "Discourse bounce feedback"
+  },
+  "execution": {
+    "id": "exec_test_bounce_003",
+    "startedAt": "2026-09-30T12:10:00.000Z"
+  },
+  "event": {
+    "subject": "Synthetic subject that must not be stored",
+    "from": "forum@example.com",
+    "fromName": "Synthetic Forum",
+    "emailId": "test-plunk-email-id-bounce-3",
+    "messageId": "test-provider-message-id-bounce-3",
+    "templateId": null,
+    "campaignId": null,
+    "sourceType": "TRANSACTIONAL",
+    "bounceType": "Undetermined",
+    "bouncedAt": "2026-09-30T12:10:00.000Z"
+  }
+}

@@ -1,0 +1,103 @@
+.plunk-feedback-admin {
+  &__grid {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.25em 1.5em;
+    margin: 0 0 1.5em;
+
+    dt {
+      color: var(--primary-high);
+    }
+
+    dd {
+      margin: 0;
+      word-break: break-word;
+    }
+  }
+
+  &__urls {
+    width: 100%;
+    margin-bottom: 0.5em;
+
+    code {
+      word-break: break-all;
+    }
+  }
+
+  &__counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em 1.5em;
+    margin: 0 0 1.5em;
+    padding: 0;
+    list-style: none;
+
+    strong {
+      font-size: var(--font-up-2);
+      margin-right: 0.25em;
+    }
+  }
+
+  &__search {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    align-items: center;
+    margin-bottom: 1em;
+
+    input[type="search"] {
+      flex: 1 1 18em;
+      margin: 0;
+    }
+
+    select {
+      margin: 0;
+    }
+  }
+
+  &__events {
+    width: 100%;
+
+    td {
+      vertical-align: top;
+      word-break: break-word;
+    }
+  }
+
+  &__detail {
+    margin: 1em 0 2em;
+    padding: 1em;
+    border: 1px solid var(--primary-low);
+    border-radius: var(--d-border-radius);
+
+    h3 {
+      margin-top: 1em;
+    }
+  }
+
+  &__status {
+    &--failed,
+    &--conflict {
+      color: var(--danger);
+    }
+
+    &--processed {
+      color: var(--success);
+    }
+  }
+
+  &__error {
+    white-space: pre-wrap;
+  }
+
+  &__warning {
+    color: var(--danger);
+  }
+
+  &__pager {
+    display: flex;
+    gap: 0.5em;
+    align-items: center;
+    margin-top: 1em;
+  }
+}

@@ -1,0 +1,20 @@
+# Discourse's shared plugin CI: rubocop, syntax_tree, eslint/prettier,
+# model annotations, the RSpec suite (including the system specs for the
+# admin page) and JavaScript tests, each run against a real Discourse
+# checkout that this repository cannot provide on its own.
+name: Discourse Plugin
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: plugin-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: discourse/.github/.github/workflows/discourse-plugin.yml@v1
